@@ -1,0 +1,4 @@
+PSFM - Play Some Fucking Music.
+
+This is a no frills music player, written in python3 with XMMS2 as the backend.
+It supports precisely the features of a music player that I use, no more.
