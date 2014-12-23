@@ -5,4 +5,4 @@ if [ -z "`ps axuw | grep [x]mms2d`" ]; then
 	sleep 1
 fi
 
-psfm.py
+./psfm.py
