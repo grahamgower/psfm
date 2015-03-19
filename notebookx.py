@@ -12,7 +12,13 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from tkinter import PhotoImage, ttk
+try:
+    # python 3.x
+    from tkinter import PhotoImage, ttk
+except ImportError:
+    # python 2.x
+    from Tkinter import PhotoImage
+    import ttk
 
 # 12x12 gifs, base64 encoded.
 img_data = [

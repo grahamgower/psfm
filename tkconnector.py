@@ -12,7 +12,12 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from tkinter import READABLE, WRITABLE
+try:
+    # python 3.x
+    from tkinter import READABLE, WRITABLE
+except ImportError:
+    # python 2.x
+    from Tkinter import READABLE, WRITABLE
 
 class TkConnector:
     """XMMS2 event handling connector for Tk."""
@@ -50,7 +55,10 @@ if __name__ == "__main__":
     import os
     import sys
     import xmmsclient
-    import tkinter
+    try:
+        import tkinter
+    except ImportError:
+        import Tkinter as tkinter
 
     xmms = xmmsclient.XMMS("TkConnector")
     try:

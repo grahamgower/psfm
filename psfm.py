@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Play Some Fucking Music, using XMMS2.
 #
@@ -18,11 +18,18 @@
 
 import os
 import sys
-import urllib.parse
 from collections import OrderedDict
 
-from tkinter import *
-from tkinter import ttk
+try:
+    # python 3.x
+    from urllib.parse import unquote_plus
+    from tkinter import *
+    from tkinter import ttk
+except ImportError:
+    # python 2.x
+    from urllib import unquote_plus
+    from Tkinter import *
+    import ttk
 
 import xmmsclient
 import xmmsclient.collections as xcoll
@@ -59,7 +66,7 @@ def mapvals(minfo):
                     title = title[:-4]
             except IndexError:
                 pass
-            title = urllib.parse.unquote_plus(title)
+            title = unquote_plus(title)
             title = title.replace("_", " ")
             yield title
         elif x == 'duration' and (val != None and val != ""):
