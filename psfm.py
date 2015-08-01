@@ -40,10 +40,12 @@ from notebookx import NotebookX
 
 XMMS_PATH = os.getenv("XMMS_PATH")
 SOURCE_PREFS = ["server", "plugin/id3v2", "*"]
-PSFM_COLUMNS = ('artist', 'album', 'tracknr', 'title', 'duration', 'song_id')
+PSFM_COLUMNS = ('artist', 'album', 'tracknr', 'title', 'duration', 'mid')
 PSFM_DISP_COLUMNS = PSFM_COLUMNS[0:-1]
 
-def mapvals(minfo):
+def frob_minfo(minfo_d):
+    """return values for PSFM_COLUMNS"""
+
     def ms2str(ms):
         secs = (ms//1000)%60
         mins = ms//(60*1000)
@@ -55,24 +57,30 @@ def mapvals(minfo):
         tm.append("{:02}".format(secs))
         return ":".join(tm)
 
-    for x in PSFM_COLUMNS:
-        val = minfo.get(x, None)
-        if x == 'title' and (val == None or val == ""):
-            # Make up the title from the filename.
-            url = minfo.get("url", "")
-            title = os.path.basename(url)
-            try:
-                if title[-4] == ".":
-                    title = title[:-4]
-            except IndexError:
-                pass
-            title = unquote_plus(title)
-            title = title.replace("_", " ")
-            yield title
-        elif x == 'duration' and (val != None and val != ""):
-            yield ms2str(val)
-        else:
-            yield "" if val is None else val
+    mid, minfo = minfo_d.items()[0]
+
+    artist = minfo.get("artist", "")
+    album = minfo.get("album", "")
+    tracknr = minfo.get("tracknr", "")
+    title = minfo.get("title", "")
+    duration = minfo.get("duration", "")
+
+    if title == "":
+        # Make up the title from the filename.
+        url = minfo.get("url", "")
+        title = os.path.basename(url)
+        try:
+            if title[-4] == ".":
+                title = title[:-4]
+        except IndexError:
+            pass
+        title = unquote_plus(title)
+        title = title.replace("_", " ")
+
+    if duration:
+        duration = ms2str(duration)
+
+    return (artist, album, tracknr, title, duration, mid)
 
 class SongList(ttk.Frame):
     """
@@ -154,8 +162,8 @@ class SongList(ttk.Frame):
                 minfos = reversed(minfos)
 
             for pid, minfo in enumerate(minfos, 1):
-                vals = list(mapvals(minfo))
-                mid = minfo.get("song_id")
+                vals = frob_minfo(minfo)
+                mid = int(vals[-1])
                 self.mid2pid[mid] = pid
                 self.songlist.item(pid, values=vals)
 
@@ -177,8 +185,8 @@ class SongList(ttk.Frame):
                     "source-preference": SOURCE_PREFS,
                     "data": {
                         "type": "metadata",
-                        "get": ["field", "value"],
-                        "fields": ["artist", "album", "tracknr", "title", "duration", "url", "id"],
+                        "get": ["id", "field", "value"],
+                        "fields": ["artist", "album", "tracknr", "title", "duration", "url"],
                         }
                     }
             self.xmms.coll_query(self.coll, fetch, update_song_info)
@@ -344,8 +352,7 @@ class PSFM():
             if res.iserror():
                 raise Except(res.value())
             minfo = res.value()
-            minfo.sources = SOURCE_PREFS
-            vals = list(mapvals(minfo))
+            vals = frob_minfo({mid: minfo})
             self.update_song_descr(vals)
 
         self.xmms.medialib_get_info(mid, cb_medialib_get_info)
@@ -431,5 +438,5 @@ class PSFM():
 
 if __name__ == "__main__":
     app = PSFM()
-#    app.root.attributes('-zoomed', True)
+    app.root.attributes('-zoomed', True)
     app.root.mainloop()
