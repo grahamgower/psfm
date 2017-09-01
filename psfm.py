@@ -25,11 +25,13 @@ try:
     from urllib.parse import unquote_plus
     from tkinter import *
     from tkinter import ttk
+    from tkinter import font
 except ImportError:
     # python 2.x
     from urllib import unquote_plus
     from Tkinter import *
     import ttk
+    import tkFont as font
 
 import xmmsclient
 import xmmsclient.collections as xcoll
@@ -120,7 +122,7 @@ class SongList(ttk.Frame):
         songlist.heading('artist', text='Artist')
         songlist.column('album', width=200, anchor=W, stretch=False)
         songlist.heading('album', text='Album')
-        songlist.column('tracknr', width=50, anchor=E, stretch=False)
+        songlist.column('tracknr', width=100, anchor=E, stretch=False)
         songlist.heading('tracknr', text='Track')
         songlist.column('title', width=500, anchor=W, stretch=True)
         songlist.heading('title', text='Title')
@@ -294,7 +296,6 @@ class PSFM():
         self.xmms.broadcast_playlist_current_pos(self.update_playlist_current_pos)
         self.xmms.playback_current_id(self.update_current_song)
 
-
     def build_topframe(self):
         controls = [
                 ("home", self.home),
@@ -317,19 +318,28 @@ class PSFM():
                 s.grid(column=i, row=0, sticky=(N, S), padx=padx, pady=pady)
             else:
                 b = ttk.Button(self.topframe, text=txt, command=cmd)
-                b.grid(column=i, row=0, sticky=W, padx=padx, pady=pady)
+                b.grid(column=i, row=0, sticky=(N,S,W), padx=padx, pady=pady)
             i += 1
 
         l = ttk.Label(self.topframe, text="search:")
-        l.grid(column=i, row=0, sticky=E, padx=padx, pady=pady)
+        l.grid(column=i, row=0, sticky=(N,S,W), padx=padx, pady=pady)
         i += 1
 
         self.searchbox = StringVar("")
         e = ttk.Entry(self.topframe, width=50, textvariable=self.searchbox)
-        e.grid(column=i, row=0, sticky=E, padx=padx, pady=pady)
+        e.grid(column=i, row=0, sticky=(N,S,E,W), padx=padx, pady=pady)
+        self.topframe.columnconfigure(i, weight=1)
+        i += 1
         e.bind("<KeyPress-Return>", self.search)
         e.bind("<KeyPress-KP_Enter>", self.search)
         e.focus_set()
+
+        minus = ttk.Button(self.topframe, text="-", command=lambda:self.fontsize(-2))
+        minus.grid(column=i, row=0, sticky=(N,S,E))
+        i += 1
+        plus = ttk.Button(self.topframe, text="+", command=lambda:self.fontsize(2))
+        plus.grid(column=i, row=0, sticky=(N,S,E))
+        i += 1
 
     def build_statusbar(self):
         self.status = StringVar("")
@@ -435,8 +445,46 @@ class PSFM():
 
         self.notebook.forget(index)
 
+    def fontsize(self, sz_diff):
+        """
+        Change font sizes by sz_diff.
+        """
+
+        for fname in font.names():
+            f = font.nametofont(fname)
+            sz = f.configure()["size"]
+
+            if sz < 0:
+                # use negative numbers if tk does. 
+                sz -= sz_diff
+            else:
+                sz += sz_diff
+
+            if abs(sz) <= 4 or abs(sz) >= 64:
+                # don't be stupid
+                continue
+
+            f.configure(size=sz)
+
+        # The treeview does not change row height automatically.
+        style = ttk.Style()
+        rowheight = style.configure("Treeview").get("rowheight")
+        if rowheight is None:
+            # The style doesn't have this set to start with.
+            # Shit like this makes ttk styling useless for portability.
+            rowheight = 20
+        rowheight += sz_diff
+
+        if rowheight <= 10 or rowheight >= 140:
+            # getting ridiculous
+            return
+
+        style.configure("Treeview", rowheight=rowheight+sz_diff)
+
 
 if __name__ == "__main__":
     app = PSFM()
     app.root.attributes('-zoomed', True)
+    # increase font size by default
+    app.fontsize(10)
     app.root.mainloop()
